@@ -1,0 +1,13 @@
+[package]
+name = "data-sync"
+version = "0.1.0"
+authors = ["Pu Wang <nicolas.weeks@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bcc = { version = "0.0.29", features = ["v0_16_0", "static", "llvm_9" ] }
+byteorder = "1.3.4"
+ctrlc = "3.1.7"
+libc = "0.2.79"
