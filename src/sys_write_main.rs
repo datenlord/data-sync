@@ -1,47 +1,38 @@
 use bcc::perf_event;
-use bcc::{BccError, Kprobe, Kretprobe, BPF};
+use bcc::{BccError, Tracepoint, BPF};
 
 use core::sync::atomic::{AtomicBool, Ordering};
 use std::ptr;
 use std::sync::Arc;
 
-/// <https://elixir.bootlin.com/linux/latest/source/include/linux/sched.h#L212>
-const TASK_COMM_LEN: usize = 16;
-/// <https://elixir.bootlin.com/linux/latest/source/include/linux/dcache.h#L78>
-const DNAME_INLINE_LEN: usize = 32;
-
 #[repr(C)]
 struct event_data_t {
-    pid: u32,
-    sz: u32,
-    delta_us: u64,
-    name_len: u32,
-    parent_name_len: u32,
-    name: [u8; DNAME_INLINE_LEN],
-    parent_name: [u8; DNAME_INLINE_LEN],
-    comm: [u8; TASK_COMM_LEN],
+    tpid: u64,
+    fd: u32,
+    padding: u32,
+    count: usize,
+    buf: [u8; 1024],
 }
 
 fn do_main(runnable: Arc<AtomicBool>) -> Result<(), BccError> {
-    let bpf_code = include_str!("vfs_write.c");
+    let bpf_code = include_str!("sys_write.c");
 
     let mut module = BPF::new(bpf_code)?;
-    Kprobe::new()
-        .handler("trace_write_entry")
-        .function("vfs_write")
+    Tracepoint::new()
+        .handler("write_entry")
+        .subsystem("syscalls")
+        .tracepoint("sys_enter_write")
         .attach(&mut module)?;
-    Kretprobe::new()
-        .handler("trace_write_return")
-        .function("vfs_write")
+    Tracepoint::new()
+        .handler("write_exit")
+        .subsystem("syscalls")
+        .tracepoint("sys_exit_write")
         .attach(&mut module)?;
 
     let table = module.table("events")?;
     let mut perf_map = perf_event::init_perf_map(table, perf_data_callback)?;
     // Print header
-    println!(
-        "{:-7} {:-7} {:-7} {}",
-        "COMM", "BYTES", "LAT(us)", "FILENAME"
-    );
+    println!("{:-7} {:-7} {:-7} {}", "PID", "FD", "SIZE", "BUFFER");
     // This `.poll()` loop is what makes our callback get called
     while runnable.load(Ordering::SeqCst) {
         perf_map.poll(200);
@@ -54,12 +45,11 @@ fn perf_data_callback() -> Box<dyn FnMut(&[u8]) + Send> {
         // This callback
         let data = parse_struct(x);
         println!(
-            "{:-7} {:>7} {:>7} {}/{}",
-            get_string(&data.comm),
-            data.sz,
-            data.delta_us,
-            get_string(&data.parent_name),
-            get_string(&data.name),
+            "{:-7} {:>7} {:>7} {}",
+            data.tpid >> 32,
+            data.fd,
+            data.count,
+            get_string(&data.buf)
         );
     })
 }
