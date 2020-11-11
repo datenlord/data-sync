@@ -1,0 +1,14 @@
++ find . -name '*.a' -exec cp -v '{}' /usr/lib/ ';'
+'./src/cc/api/libapi-static.a' -> '/usr/lib/libapi-static.a'
+'./src/cc/libbcc_bpf.a' -> '/usr/lib/libbcc_bpf.a'
+'./src/cc/libbcc.a' -> '/usr/lib/libbcc.a'
+'./src/cc/frontends/b/libb_frontend.a' -> '/usr/lib/libb_frontend.a'
+'./src/cc/frontends/clang/libclang_frontend.a' -> '/usr/lib/libclang_frontend.a'
+'./src/cc/libbcc-loader-static.a' -> '/usr/lib/libbcc-loader-static.a'
+'./src/cc/usdt/libusdt-static.a' -> '/usr/lib/libusdt-static.a'
+
+
+export RUSTFLAGS="-L /usr/lib -L /usr/lib64 -L /lib/x86_64-linux-gnu -L /usr/lib/llvm-${LLVM}/lib"
+apt-get install libxml2-dev
+apt-get install liblzma-dev
+
