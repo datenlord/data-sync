@@ -3,38 +3,50 @@ FROM ubuntu:${DIST} as builder
 
 ARG LLVM=9
 ENV LLVM=${LLVM}
-ARG BCC=0.16.0
+ARG BCC=0.17.0
 ENV BCC=${BCC}
 ARG WORKDIR=/tmp/rust-bcc
 WORKDIR ${WORKDIR}
 
 # Install BCC dependencies
+#apt-get --yes install autoconf libtool pkg-config
 ENV DEBIAN_FRONTEND=noninteractive
 RUN set -eux; \
     apt-get update ; \
     apt-get --yes install \
+        autoconf \
+#        bpfcc-tools \
+        binutils \
         bison \
         build-essential \
+        clang-$LLVM \
         cmake \
+        elfutils \
         flex \
-        git \
+#        git \
         libclang-$LLVM-dev \
         libedit-dev \
         libelf-dev \
         libfl-dev \
+        libncurses-dev \
+        liblzma-dev \
+        libssl-dev \
+        libtool \
+        libxml2-dev \
         libz-dev \
+        llvm-$LLVM \
         llvm-$LLVM-dev \
-        llvm-$LLVM-dev \
+        pkg-config \
         python \
         ;
 
 # Install rust-bcc dependencies
-RUN set -eux; \
-    apt-get --yes install \
-        liblzma-dev \
-        libxml2-dev \
+#RUN set -eux; \
+#    apt-get --yes install \
+#        liblzma-dev \
+#        libxml2-dev \
 #        module-init-tools \
-        ;
+#        ;
 
 # Install Rust
 ENV RUSTUP_HOME=/usr/local/rustup \
